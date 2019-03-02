@@ -3,13 +3,13 @@ package com.sourcey.materiallogindemo.Utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-public class DnaPrefs {
-    private static final String KENT_SECURITY_PREFS = "HFCSecurity";
+public class LocationPrefs {
+    private static final String LOCATION_SECURITY_PREFS = "Location";
     private static SharedPreferences sharedPreferences;
 
     public static SharedPreferences getInstance(Context context) {
         if (sharedPreferences == null) {
-            sharedPreferences = context.getSharedPreferences(KENT_SECURITY_PREFS, 0);
+            sharedPreferences = context.getSharedPreferences(LOCATION_SECURITY_PREFS, 0);
         }
         return sharedPreferences;
     }

@@ -30,6 +30,7 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -40,6 +41,11 @@ import com.karumi.dexter.listener.PermissionDeniedResponse;
 import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
+import com.sourcey.materiallogindemo.Model.AddTripResponse;
+import com.sourcey.materiallogindemo.Model.TripResponse;
+import com.sourcey.materiallogindemo.Retrofit.RestClient;
+import com.sourcey.materiallogindemo.Utils.LocationPrefs;
+import com.sourcey.materiallogindemo.Utils.Utils;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -47,12 +53,16 @@ import java.util.Date;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import io.realm.Realm;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
-/**
- * Reference: https://github.com/googlesamples/android-play-location/tree/master/LocationUpdates
- */
 
 public class LocationActivity extends AppCompatActivity {
+
 
     private static final String TAG = LocationActivity.class.getSimpleName();
 
@@ -68,25 +78,20 @@ public class LocationActivity extends AppCompatActivity {
     @BindView(R.id.btn_stop_location_updates)
     Button btnStopUpdates;
 
+    /*@BindView(R.id.btnShow1)
+    Button showdata;*/
 
-    @BindView(R.id.btnShowonmap)
-    Button btnShowonmap;
 
-    // location last updated time
     private String mLastUpdateTime;
 
-    // location updates interval - 10sec
+
     private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
 
-    // fastest updates interval - 5 sec
-    // location updates will be received if another app is requesting the locations
-    // than your app can handle
-    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 5000;
+    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
 
     private static final int REQUEST_CHECK_SETTINGS = 100;
 
 
-    // bunch of location related apis
     private FusedLocationProviderClient mFusedLocationClient;
     private SettingsClient mSettingsClient;
     private LocationRequest mLocationRequest;
@@ -94,17 +99,27 @@ public class LocationActivity extends AppCompatActivity {
     private LocationCallback mLocationCallback;
     private Location mCurrentLocation;
 
-    // boolean flag to toggle the ui
+
     private Boolean mRequestingLocationUpdates;
+    private TripResponse tripResponse;
+    private int visit_id;
+    private String userid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_location);
         ButterKnife.bind(this);
+        Realm.init(this);
+         userid = LocationPrefs.getString(getApplicationContext(), "loginId");
+         visit_id = LocationPrefs.getInt(getApplicationContext(), "userid",0);
+         if(visit_id<1){
+             visit_id++;
+         }
 
-        // initialize the necessary libraries
+
         init();
+        getTripLocation();
 
         // restore the values from saved instance state
         restoreValuesFromBundle(savedInstanceState);
@@ -113,34 +128,27 @@ public class LocationActivity extends AppCompatActivity {
     private void init() {
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         mSettingsClient = LocationServices.getSettingsClient(this);
-
         mLocationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
-                // location is received
                 mCurrentLocation = locationResult.getLastLocation();
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-
-                updateLocationUI();
+                distanceFromLocation(tripResponse, mCurrentLocation);
             }
         };
 
         mRequestingLocationUpdates = false;
-
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
         mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
         builder.addLocationRequest(mLocationRequest);
         mLocationSettingsRequest = builder.build();
     }
 
-    /**
-     * Restoring values from saved instance state
-     */
+
     private void restoreValuesFromBundle(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
             if (savedInstanceState.containsKey("is_requesting_updates")) {
@@ -154,32 +162,163 @@ public class LocationActivity extends AppCompatActivity {
             if (savedInstanceState.containsKey("last_updated_on")) {
                 mLastUpdateTime = savedInstanceState.getString("last_updated_on");
             }
+
         }
 
-        updateLocationUI();
+        /* updateLocationOnServer(1, tripResponse.getTripDetail().get(0).getId());*/
     }
 
 
-    /**
-     * Update the UI displaying the location data
-     * and toggling the buttons
-     */
-    private void updateLocationUI() {
+    private void updateLocationOnServer(int status, String id) {
+
         if (mCurrentLocation != null) {
-            txtLocationResult.setText(
+
+            String visiid = String.valueOf(visit_id);
+            String tripid = id;
+
+            String userid = LocationPrefs.getString(getApplicationContext(), "loginId");
+            String lattitude = String.valueOf(mCurrentLocation.getLatitude());
+            String longitude = String.valueOf(mCurrentLocation.getLongitude());
+
+            RequestBody lat = RequestBody.create(MediaType.parse("text/plain"), lattitude);
+            RequestBody statusbody = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(status));
+            RequestBody longit = RequestBody.create(MediaType.parse("text/plain"), longitude);
+            RequestBody userid1 = RequestBody.create(MediaType.parse("text/plain"), userid);
+            RequestBody tripid1 = RequestBody.create(MediaType.parse("text/plain"), tripid);
+            RequestBody visitid = RequestBody.create(MediaType.parse("text/plain"), visiid);
+
+
+            Utils.showProgressDialog(this);
+            RestClient.AddUser(userid1, tripid1, visitid, lat, longit, statusbody, new Callback<AddTripResponse>() {
+                @Override
+                public void onResponse(Call<AddTripResponse> call, Response<AddTripResponse> response) {
+                    Utils.dismissProgressDialog();
+                    if (response.body() != null) {
+                        if (response.body().getStatus().equalsIgnoreCase("1")) {
+                            Utils.displayToast(getApplicationContext(), "Successfuly Add");
+
+
+                            Log.d("MY LOCATION DATA", response.body().getMessage());
+
+                        } else {
+                            Log.d("MY LOCATION DATA", response.body().getMessage());
+                            Toast.makeText(LocationActivity.this, "Failed AddData", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<AddTripResponse> call, Throwable t) {
+                    Utils.dismissProgressDialog();
+                    Utils.displayToast(LocationActivity.this, "Unable to AddData, please try again later");
+
+                }
+           /* txtLocationResult.setText(
                     "Lat: " + mCurrentLocation.getLatitude() + ", " +
                             "Lng: " + mCurrentLocation.getLongitude()
-            );
+            );*/
 
-            // giving a blink animation on TextView
+
+                /*  *//*Realm realm = Realm.getDefaultInstance();
+            final String lattitude = String.valueOf(mCurrentLocation.getLatitude());
+            final String longitude = String.valueOf(mCurrentLocation.getLongitude());
+            final String time = String.valueOf(mCurrentLocation.getTime());
+
+
+            realm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+
+                    GpsTracker gps = new GpsTracker();
+                    gps.setLattitude(lattitude);
+                    gps.setLongitude(longitude);
+                    gps.setTime(time);
+                    realm.insertOrUpdate(gps);
+
+
+                }*//*
+            });*/
+
+
+           /* // giving a blink animation on TextView
             txtLocationResult.setAlpha(0);
             txtLocationResult.animate().alpha(1).setDuration(300);
 
             // location last updated time
-            txtUpdatedOn.setText("Last updated on: " + mLastUpdateTime);
+          *//*  txtUpdatedOn.setText("Last updated on: " + mLastUpdateTime);*//*
+        }*/
+
+      /*  toggleButtons();
+    }
+
+*/
+            });
+
         }
 
-        toggleButtons();
+
+    }
+
+    private void getTripLocation() {
+
+        Utils.showProgressDialog(this);
+        RestClient.tripRespons(new Callback<TripResponse>() {
+            @Override
+            public void onResponse(Call<TripResponse> call, Response<TripResponse> response) {
+
+                Utils.dismissProgressDialog();
+
+                if (response.body() != null) {
+                    if (response.body() != null) {
+
+
+                        tripResponse = response.body();
+
+                    } else {
+                        Toast.makeText(LocationActivity.this, "Failed AddData", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<TripResponse> call, Throwable t) {
+                Utils.dismissProgressDialog();
+                Utils.displayToast(LocationActivity.this, "Unable to AddData, please try again later");
+
+            }
+        });
+
+    }
+
+
+    private void distanceFromLocation(TripResponse tripResponse, Location mCurrentLocation) {
+
+
+        if (tripResponse != null && mCurrentLocation != null) {
+            LatLng myLat = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+            Location triplocation = new Location("Two");
+            triplocation.setLatitude(Double.parseDouble(tripResponse.getTripDetail().get(0).getLat()));
+            triplocation.setLongitude(Double.parseDouble(tripResponse.getTripDetail().get(0).getLong()));
+
+            float distanceBetweenLocation = mCurrentLocation.distanceTo(triplocation);
+
+            if (distanceBetweenLocation < 100) {
+
+                updateLocationOnServer(1, tripResponse.getTripDetail().get(0).getId());
+                Toast.makeText(getApplicationContext(), "Trip tracking started", Toast.LENGTH_SHORT).show();
+
+            } else {
+                updateLocationOnServer(2, tripResponse.getTripDetail().get(0).getId());
+                LocationPrefs.putInt(getApplicationContext(), userid,visit_id+1);
+                visit_id++;
+
+
+                Toast.makeText(getApplicationContext(), "Trip tracking end", Toast.LENGTH_SHORT).show();
+            }
+
+        }
+
+
     }
 
     @Override
@@ -201,11 +340,7 @@ public class LocationActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Starting location updates
-     * Check whether location settings are satisfied and then
-     * location updates will be requested
-     */
+
     private void startLocationUpdates() {
         mSettingsClient
                 .checkLocationSettings(mLocationSettingsRequest)
@@ -221,7 +356,7 @@ public class LocationActivity extends AppCompatActivity {
                         mFusedLocationClient.requestLocationUpdates(mLocationRequest,
                                 mLocationCallback, Looper.myLooper());
 
-                        updateLocationUI();
+
                     }
                 })
                 .addOnFailureListener(this, new OnFailureListener() {
@@ -230,11 +365,10 @@ public class LocationActivity extends AppCompatActivity {
                         int statusCode = ((ApiException) e).getStatusCode();
                         switch (statusCode) {
                             case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                                Log.i(TAG, "Location settings are not satisfied. Attempting to upgrade " +
+                                Log.i(TAG, "GpsTracker settings are not satisfied. Attempting to upgrade " +
                                         "location settings ");
                                 try {
-                                    // Show the dialog by calling startResolutionForResult(), and check the
-                                    // result in onActivityResult().
+
                                     ResolvableApiException rae = (ResolvableApiException) e;
                                     rae.startResolutionForResult(LocationActivity.this, REQUEST_CHECK_SETTINGS);
                                 } catch (IntentSender.SendIntentException sie) {
@@ -242,14 +376,14 @@ public class LocationActivity extends AppCompatActivity {
                                 }
                                 break;
                             case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-                                String errorMessage = "Location settings are inadequate, and cannot be " +
+                                String errorMessage = "GpsTracker settings are inadequate, and cannot be " +
                                         "fixed here. Fix in Settings.";
                                 Log.e(TAG, errorMessage);
 
                                 Toast.makeText(LocationActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                         }
 
-                        updateLocationUI();
+
                     }
                 });
     }
@@ -269,8 +403,6 @@ public class LocationActivity extends AppCompatActivity {
                     @Override
                     public void onPermissionDenied(PermissionDeniedResponse response) {
                         if (response.isPermanentlyDenied()) {
-                            // open device settings when the permission is
-                            // denied permanently
                             openSettings();
                         }
                     }
@@ -288,12 +420,6 @@ public class LocationActivity extends AppCompatActivity {
         stopLocationUpdates();
     }
 
-    @OnClick(R.id.btnShowonmap)
-    public void setBtnShowonmap() {
-      Intent i = new Intent(LocationActivity.this,MapsActivity.class);
-      startActivity(i);
-    }
-
     public void stopLocationUpdates() {
         // Removing location updates
         mFusedLocationClient
@@ -301,7 +427,7 @@ public class LocationActivity extends AppCompatActivity {
                 .addOnCompleteListener(this, new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
-                        Toast.makeText(getApplicationContext(), "Location updates stopped!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), "GpsTracker updates stopped!", Toast.LENGTH_SHORT).show();
                         toggleButtons();
                     }
                 });
@@ -317,6 +443,30 @@ public class LocationActivity extends AppCompatActivity {
         }
     }
 
+    /* @OnClick(R.id.btnShow1)
+     public void showdata() {
+
+         Realm realm = Realm.getDefaultInstance();
+         realm.executeTransaction(new Realm.Transaction() {
+             @Override
+             public void execute(Realm realm) {
+
+                 RealmResults<GpsTracker> realmResults = realm.where(GpsTracker.class).findAll();
+                 if ((!realmResults.isEmpty())) {
+                     for (GpsTracker gpsTracker : realmResults) {
+                         Log.d("Location Data", gpsTracker.getLattitude() + " " + gpsTracker.getLongitude() + " " + gpsTracker.getTime());
+                         Toast.makeText(LocationActivity.this, gpsTracker.getLattitude() + " " + gpsTracker.getLongitude() + " " + gpsTracker.getTime(), Toast.LENGTH_SHORT).show();
+                     }
+
+                     Toast.makeText(LocationActivity.this, "Check Your Logcat", Toast.LENGTH_SHORT).show();
+                 } else {
+                     Toast.makeText(LocationActivity.this, "No Data", Toast.LENGTH_SHORT).show();
+
+                 }
+             }
+         });
+     }
+ */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
@@ -351,13 +501,7 @@ public class LocationActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
 
-        // Resuming location updates depending on button state and
-        // allowed permissions
-        if (mRequestingLocationUpdates && checkPermissions()) {
-            startLocationUpdates();
-        }
 
-        updateLocationUI();
     }
 
     private boolean checkPermissions() {
@@ -372,8 +516,29 @@ public class LocationActivity extends AppCompatActivity {
         super.onPause();
 
         if (mRequestingLocationUpdates) {
-            // pausing location updates
+
             stopLocationUpdates();
         }
     }
 }
+
+/*
+public class MyLocationListener implements LocationListener {
+    @Override
+    public void onLocationChanged(Location location) {
+        if (status == 0) {
+            lat1 = location.getLatitude();
+            lon1 = location.getLongitude();
+        } else if ((status % 2) != 0) {
+            lat2 = location.getLatitude();
+            lon2 = location.getLongitude();
+            distance += distanceBetweenTwoPoint(lat1, lon1, lat2, lon2);
+        } else if ((status % 2) == 0) {
+            lat1 = location.getLatitude();
+            lon1 = location.getLongitude();
+            distance += distanceBetweenTwoPoint(lat2, lon2, lat1, lon1);
+        }
+        status++;
+        UIhandler.postDelayed(sendUpdatesToUI, 0);
+    }
+*/

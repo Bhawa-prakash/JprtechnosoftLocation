@@ -7,6 +7,7 @@
   <color name="primary_dark">#E12929</color>
   <color name="primary_darker">#CC1D1D</color>
   <color name="accent">#FFFFFF</color>
+  <color name="pink">#F08080</color>
 
   <color name="black">#000000</color>
   <color name="jet">#222222</color>
@@ -17,4 +18,9 @@
   <color name="base">#AAAAAA</color>
   <color name="iron">#CCCCCC</color>
   <color name="white">#FFFFFF</color>
+  <color name="button">#ff3d00</color>
+  <color name="blue">#4080ff</color>
+  <color name="skyblue">#FF393FF2</color>
+  <color name="textcolor">#3e3e3e</color>
+  <color name="linecolor">#3e3e3e</color>
 </resources>

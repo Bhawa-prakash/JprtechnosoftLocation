@@ -6,40 +6,71 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import android.content.Intent;
+import android.util.Patterns;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.sourcey.materiallogindemo.Model.LoginResponse;
+import com.sourcey.materiallogindemo.Model.SignupResponse;
+import com.sourcey.materiallogindemo.Retrofit.RestClient;
+import com.sourcey.materiallogindemo.Utils.LocationPrefs;
+import com.sourcey.materiallogindemo.Utils.Utils;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final int REQUEST_SIGNUP = 0;
 
-    @BindView(R.id.input_email) EditText _emailText;
-    @BindView(R.id.input_password) EditText _passwordText;
-    @BindView(R.id.btn_login) Button _loginButton;
-    @BindView(R.id.link_signup) TextView _signupLink;
-    
+
+    @BindView(R.id.edit_email)
+    EditText _emailText;
+
+    @BindView(R.id.edit_Passwword)
+    EditText _passwordText;
+
+    @BindView(R.id.btn_login)
+    Button _loginButton;
+
+    @BindView(R.id.link_signup)
+    TextView _signupLink;
+
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
-        
+
+       ScrollView sv = (ScrollView)findViewById(R.id.scroll1);
+
+        sv.setVerticalScrollBarEnabled(false);
+        sv.setHorizontalScrollBarEnabled(false);
+
+
+
         _loginButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
 
                 login();
-                Intent intent=new Intent(LoginActivity.this, LocationActivity.class);
-                startActivity(intent);
+
             }
         });
+
+
 
         _signupLink.setOnClickListener(new View.OnClickListener() {
 
@@ -68,12 +99,9 @@ public class LoginActivity extends AppCompatActivity {
                 R.style.AppTheme_Dark_Dialog);
         progressDialog.setIndeterminate(true);
         progressDialog.setMessage("Authenticating...");
-        progressDialog.show();
 
-        String email = _emailText.getText().toString();
-        String password = _passwordText.getText().toString();
 
-        // TODO: Implement your own authentication logic here.
+
 
         new android.os.Handler().postDelayed(
                 new Runnable() {
@@ -81,7 +109,7 @@ public class LoginActivity extends AppCompatActivity {
                         // On complete call either onLoginSuccess or onLoginFailed
                         onLoginSuccess();
                         // onLoginFailed();
-                        progressDialog.dismiss();
+                      progressDialog.dismiss();
                     }
                 }, 3000);
     }
@@ -92,8 +120,7 @@ public class LoginActivity extends AppCompatActivity {
         if (requestCode == REQUEST_SIGNUP) {
             if (resultCode == RESULT_OK) {
 
-                // TODO: Implement successful signup logic here
-                // By default we just finish the Activity and log them in automatically
+
                 this.finish();
             }
         }
@@ -117,27 +144,66 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public boolean validate() {
-        boolean valid = true;
+        boolean check = true;
 
-        String email = _emailText.getText().toString();
+       String email = _emailText.getText().toString();
         String password = _passwordText.getText().toString();
 
         if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             _emailText.setError("enter a valid email address");
-            valid = false;
+            check = false;
         } else {
             _emailText.setError(null);
         }
 
         if (password.isEmpty() || password.length() < 4 || password.length() > 10) {
             _passwordText.setError("between 4 and 10 alphanumeric characters");
-            valid = false;
+            check = false;
         } else {
             _passwordText.setError(null);
         }
 
-        return valid;
 
 
+        RequestBody email1 = RequestBody.create(MediaType.parse("text/plain"),   email);
+        RequestBody pwd = RequestBody.create(MediaType.parse("text/plain"), password);
+        Utils.showProgressDialog(this);
+        RestClient.LoginUser(email1,pwd, new Callback<LoginResponse>() {
+            @Override
+            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                Utils.dismissProgressDialog();
+                if (response != null && response.body() != null) {
+                    LoginResponse loginResponse = response.body();
+                    if (Integer.parseInt(loginResponse.getStatus()) == 1) {
+                        Utils.displayToast(LoginActivity.this, loginResponse.getMessage());
+                        LocationPrefs.putString(getApplicationContext(),"loginId",loginResponse.getLoginDetails().get(0).getId());
+
+                        Intent intent=new Intent(LoginActivity.this,LocationActivity.class);
+                        startActivity(intent);
+                    }else{
+                        Toast.makeText(LoginActivity.this, "Invalid Status", Toast.LENGTH_SHORT).show();
+                    }
+
+                } else {
+                    Toast.makeText(LoginActivity.this, "Invalid Credential", Toast.LENGTH_SHORT).show();
+
+                }
+            }
+
+
+
+
+
+            @Override
+            public void onFailure(Call<LoginResponse> call, Throwable t) {
+                Utils.dismissProgressDialog();
+                Utils.displayToast(LoginActivity.this, "Invalid login detail");
+
+            }
+
+        });
+        return check;
     }
+
+
 }

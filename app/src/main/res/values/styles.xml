@@ -2,7 +2,13 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+        <item name="android:windowActionBar">@color/pink</item>
+        <item name="colorAccent">@color/pink</item>
+        <item name="android:textColorPrimary">@color/pink</item>
+        <item name="android:background">@color/pink</item>
+
+
+
     </style>
 
     <style name="AppTheme.Dark" parent="Theme.AppCompat.NoActionBar">
@@ -18,13 +24,31 @@
         <item name="android:textColorHint">@color/iron</item>
 
         <item name="colorButtonNormal">@color/primary_darker</item>
-        <item name="android:colorButtonNormal">@color/primary_darker</item>
+
     </style>
 
     <style name="AppTheme.Dark.Dialog" parent="Theme.AppCompat.Dialog">
-        <item name="colorAccent">@color/white</item>
+        <item name="colorAccent">@color/pink</item>
         <item name="android:textColorPrimary">@color/iron</item>
-        <item name="android:background">@color/primary</item>
+        <item name="android:background">@color/white</item>
     </style>
 
+    <style name="AppTheme.Dark1" parent="Theme.AppCompat">
+        <item name="colorAccent">@color/pink</item>
+        <item name="android:windowActionBar">@color/pink</item>
+        <item name="android:windowActionBarOverlay">@color/pink</item>
+
+
+        <item name="android:textColorPrimary">@color/iron</item>
+        <item name="android:background">@color/white</item>
+    </style>
+    <style name="AppTheme1" parent="Theme.AppCompat.Light.NoActionBar">
+    <!-- Customize your theme here. -->
+    <item name="colorPrimary">@color/button</item>
+    <item name="colorPrimaryDark">@color/button</item>
+    <item name="colorAccent">@color/textcolor</item>
+
+    </style>
+    <style name="AppTheme2" parent="Theme.AppCompat.Light.NoActionBar">
+    </style>
 </resources>
