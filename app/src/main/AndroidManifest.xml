@@ -12,17 +12,17 @@
         android:icon="@mipmap/ic_launcher"
         android:label="LocationTracker"
         android:theme="@style/AppTheme">
-
-        <activity android:name=".LoginActivity"
+        <activity android:name=".TripResponseActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme1"></activity>
-
-
-
+        <activity
+            android:name=".LoginActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme1" />
         <activity
             android:name=".MapsActivity"
-            android:screenOrientation="portrait"
             android:label="@string/title_activity_maps"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme1" />
         <activity
             android:name=".SplashActivity"
@@ -37,15 +37,14 @@
         </activity>
         <activity
             android:name=".SignupActivity"
-            android:screenOrientation="portrait"
             android:label="LocationTracker"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme1" />
         <activity
             android:name=".LocationActivity"
-            android:screenOrientation="portrait"
             android:label="LocationTracker"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme1" />
-
     </application>
 
 </manifest>

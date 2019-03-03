@@ -32,6 +32,7 @@
         android:textColor="@color/white" />
 
     <Button
+        android:visibility="gone"
         android:id="@+id/btn_stop_location_updates"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

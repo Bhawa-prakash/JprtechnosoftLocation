@@ -164,7 +164,6 @@ public class LoginActivity extends AppCompatActivity {
         }
 
 
-
         RequestBody email1 = RequestBody.create(MediaType.parse("text/plain"),   email);
         RequestBody pwd = RequestBody.create(MediaType.parse("text/plain"), password);
         Utils.showProgressDialog(this);
@@ -172,23 +171,25 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
                 Utils.dismissProgressDialog();
-                if (response != null && response.body() != null) {
-                    LoginResponse loginResponse = response.body();
-                    if (Integer.parseInt(loginResponse.getStatus()) == 1) {
-                        Utils.displayToast(LoginActivity.this, loginResponse.getMessage());
-                        LocationPrefs.putString(getApplicationContext(),"loginId",loginResponse.getLoginDetails().get(0).getId());
 
-                        Intent intent=new Intent(LoginActivity.this,LocationActivity.class);
-                        startActivity(intent);
-                    }else{
-                        Toast.makeText(LoginActivity.this, "Invalid Status", Toast.LENGTH_SHORT).show();
+                    if (response != null && response.body() != null) {
+                        LoginResponse loginResponse = response.body();
+                        if (Integer.parseInt(loginResponse.getStatus()) == 1) {
+                            Utils.displayToast(LoginActivity.this, loginResponse.getMessage());
+                            LocationPrefs.putString(getApplicationContext(), "loginId", loginResponse.getLoginDetails().get(0).getId());
+
+                            Intent intent = new Intent(LoginActivity.this, TripResponseActivity.class);
+                            startActivity(intent);
+                        } else {
+                            Toast.makeText(LoginActivity.this, "Login Failed", Toast.LENGTH_SHORT).show();
+                        }
+
+                    } else {
+                        Toast.makeText(LoginActivity.this, "Invalid Credential", Toast.LENGTH_SHORT).show();
+
                     }
-
-                } else {
-                    Toast.makeText(LoginActivity.this, "Invalid Credential", Toast.LENGTH_SHORT).show();
-
                 }
-            }
+
 
 
 
