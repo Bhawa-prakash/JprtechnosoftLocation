@@ -123,20 +123,11 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="Already a member?"
+                android:text="Already a member?Login"
                 android:textColor="@color/textcolor"
                 android:textSize="16dip" />
 
-            <TextView
-                android:id="@+id/link_login1"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
 
-                android:text=" Login"
-                android:textColor="@color/skyblue"
-
-
-                android:textSize="16dip" />
         </LinearLayout>
 
     </LinearLayout>
