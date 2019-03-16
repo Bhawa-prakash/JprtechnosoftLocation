@@ -1,13 +1,12 @@
 package com.sourcey.materiallogindemo;
 
 import android.app.ProgressDialog;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import android.content.Intent;
-import android.util.Patterns;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,10 +15,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.sourcey.materiallogindemo.Model.LoginResponse;
-import com.sourcey.materiallogindemo.Model.SignupResponse;
 import com.sourcey.materiallogindemo.Retrofit.RestClient;
 import com.sourcey.materiallogindemo.Utils.LocationPrefs;
 import com.sourcey.materiallogindemo.Utils.Utils;
+
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -88,33 +87,9 @@ public class LoginActivity extends AppCompatActivity {
     public void login() {
         Log.d(TAG, "Login");
 
-        if (!validate()) {
-            onLoginFailed();
-            return;
-        }
+        validateAndLogin();
 
-        _loginButton.setEnabled(false);
-
-        final ProgressDialog progressDialog = new ProgressDialog(LoginActivity.this,
-                R.style.AppTheme_Dark_Dialog);
-        progressDialog.setIndeterminate(true);
-        progressDialog.setMessage("Authenticating...");
-
-
-
-
-        new android.os.Handler().postDelayed(
-                new Runnable() {
-                    public void run() {
-                        // On complete call either onLoginSuccess or onLoginFailed
-                        onLoginSuccess();
-                        // onLoginFailed();
-                      progressDialog.dismiss();
-                    }
-                }, 3000);
     }
-
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_SIGNUP) {
@@ -143,7 +118,7 @@ public class LoginActivity extends AppCompatActivity {
         _loginButton.setEnabled(true);
     }
 
-    public boolean validate() {
+    public void validateAndLogin() {
         boolean check = true;
 
        String email = _emailText.getText().toString();
@@ -163,26 +138,30 @@ public class LoginActivity extends AppCompatActivity {
             _passwordText.setError(null);
         }
 
-
-        RequestBody email1 = RequestBody.create(MediaType.parse("text/plain"),   email);
-        RequestBody pwd = RequestBody.create(MediaType.parse("text/plain"), password);
-        Utils.showProgressDialog(this);
-        RestClient.LoginUser(email1,pwd, new Callback<LoginResponse>() {
-            @Override
-            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                Utils.dismissProgressDialog();
+        if (check){
+            RequestBody email1 = RequestBody.create(MediaType.parse("text/plain"),   email);
+            RequestBody pwd = RequestBody.create(MediaType.parse("text/plain"), password);
+            Utils.showProgressDialog(this);
+            RestClient.LoginUser(email1,pwd, new Callback<LoginResponse>() {
+                @Override
+                public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                    Utils.dismissProgressDialog();
 
                     if (response != null && response.body() != null) {
                         LoginResponse loginResponse = response.body();
-                        if (Integer.parseInt(loginResponse.getStatus()) == 1) {
+                        /* try {*/
+                        if (loginResponse.getStatus()) {
                             Utils.displayToast(LoginActivity.this, loginResponse.getMessage());
-                            LocationPrefs.putString(getApplicationContext(), "loginId", loginResponse.getLoginDetails().get(0).getId());
-
-                            Intent intent = new Intent(LoginActivity.this, TripResponseActivity.class);
+                            LocationPrefs.putString(getApplicationContext(), "loginId", loginResponse.getId());
+                            LocationPrefs.putString(getApplicationContext(),"name",loginResponse.getName());
+                            Intent intent = new Intent(LoginActivity.this, LocationActivity.class);
                             startActivity(intent);
                         } else {
                             Toast.makeText(LoginActivity.this, "Login Failed", Toast.LENGTH_SHORT).show();
                         }
+                        /*}catch (Exception e) {
+                            e.printStackTrace();
+                        }*/
 
                     } else {
                         Toast.makeText(LoginActivity.this, "Invalid Credential", Toast.LENGTH_SHORT).show();
@@ -195,15 +174,17 @@ public class LoginActivity extends AppCompatActivity {
 
 
 
-            @Override
-            public void onFailure(Call<LoginResponse> call, Throwable t) {
-                Utils.dismissProgressDialog();
-                Utils.displayToast(LoginActivity.this, "Invalid login detail");
+                @Override
+                public void onFailure(Call<LoginResponse> call, Throwable t) {
+                    Utils.dismissProgressDialog();
+                    Utils.displayToast(LoginActivity.this, "Invalid login detail");
 
-            }
+                }
 
-        });
-        return check;
+            });
+        }
+
+
     }
 
 

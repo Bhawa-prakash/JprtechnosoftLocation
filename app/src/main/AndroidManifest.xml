@@ -3,6 +3,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.sourcey.materiallogindemo">
 
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -28,7 +35,7 @@
             android:name=".SplashActivity"
             android:label="LocationTracker"
             android:screenOrientation="portrait"
-            android:theme="@style/AppTheme2">
+            android:theme="@style/AppTheme6">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -45,6 +52,16 @@
             android:label="LocationTracker"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme1" />
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>

@@ -1,6 +1,6 @@
 package com.sourcey.materiallogindemo.Model;
 
-import java.util.List;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -8,19 +8,22 @@ public class LoginResponse {
 
 @SerializedName("status")
 @Expose
-private String status;
+private Boolean status;
 @SerializedName("message")
 @Expose
 private String message;
-@SerializedName("login details")
+@SerializedName("id")
 @Expose
-private List<LoginDetail> loginDetails = null;
+private String id;
+@SerializedName("Name")
+@Expose
+private String name;
 
-public String getStatus() {
+public Boolean getStatus() {
 return status;
 }
 
-public void setStatus(String status) {
+public void setStatus(Boolean status) {
 this.status = status;
 }
 
@@ -32,12 +35,20 @@ public void setMessage(String message) {
 this.message = message;
 }
 
-public List<LoginDetail> getLoginDetails() {
-return loginDetails;
+public String getId() {
+return id;
 }
 
-public void setLoginDetails(List<LoginDetail> loginDetails) {
-this.loginDetails = loginDetails;
+public void setId(String id) {
+this.id = id;
+}
+
+public String getName() {
+return name;
+}
+
+public void setName(String name) {
+this.name = name;
 }
 
 }

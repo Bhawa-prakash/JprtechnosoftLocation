@@ -1,23 +1,23 @@
 package com.sourcey.materiallogindemo.Model;
+
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 public class AddTripResponse {
 
 @SerializedName("status")
-
 @Expose
-private String status;
+private Boolean status;
 @SerializedName("message")
-
 @Expose
 private String message;
 
-public String getStatus() {
+public Boolean getStatus() {
 return status;
 }
 
-public void setStatus(String status) {
+public void setStatus(Boolean status) {
 this.status = status;
 }
 

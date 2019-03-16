@@ -43,7 +43,6 @@ import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 import com.sourcey.materiallogindemo.Model.AddTripResponse;
-import com.sourcey.materiallogindemo.Model.TripResponse;
 import com.sourcey.materiallogindemo.Retrofit.RestClient;
 import com.sourcey.materiallogindemo.Utils.LocationPrefs;
 import com.sourcey.materiallogindemo.Utils.Utils;
@@ -54,7 +53,6 @@ import java.util.Date;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import io.realm.Realm;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import retrofit2.Call;
@@ -79,8 +77,7 @@ public class LocationActivity extends AppCompatActivity {
     @BindView(R.id.btn_stop_location_updates)
     Button btnStopUpdates;
 
-    /*@BindView(R.id.btnShow1)
-    Button showdata;*/
+
 
 
     private String mLastUpdateTime;
@@ -102,39 +99,29 @@ public class LocationActivity extends AppCompatActivity {
 
 
     private Boolean mRequestingLocationUpdates;
-   // private TripResponse tripResponse;
-    private int visit_id;
+    // private TripResponse tripResponse;
+//    private int visit_id;
     private String userid;
-    private String lattitude;
-    private String longitude;
+   /* private String lattitude;
+    private String longitude;*/
     private String id;
+    private String name;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_location);
         ButterKnife.bind(this);
-       /* Realm.init(this);*/
-        lattitude = getIntent().getStringExtra("Lattitude");
-        longitude = getIntent().getStringExtra("Longitude");
-        id = getIntent().getStringExtra("ID");
+        /* Realm.init(this);*/
+
+        name = LocationPrefs.getString(getApplicationContext(), "name");
 
         userid = LocationPrefs.getString(getApplicationContext(), "loginId");
-        visit_id = LocationPrefs.getInt(getApplicationContext(), "userid", 0);
-        if (visit_id < 1) {
-            visit_id++;
-        }
 
 
         init();
-        /* getTripLocation();*/
         restoreValuesFromBundle(savedInstanceState);
 
-       /* if (getIntent() != null) {
-            String Lattitude = getIntent().getStringExtra("Lattitude");
-            String Longitude = getIntent().getStringExtra("Longitude");
-            String id = getIntent().getStringExtra("ID");
-        }*/
     }
 
     private void init() {
@@ -146,7 +133,7 @@ public class LocationActivity extends AppCompatActivity {
                 super.onLocationResult(locationResult);
                 mCurrentLocation = locationResult.getLastLocation();
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-                distanceFromLocation( mCurrentLocation);
+                distanceFromLocation(mCurrentLocation);
             }
         };
 
@@ -177,36 +164,33 @@ public class LocationActivity extends AppCompatActivity {
 
         }
 
-        /* updateLocationOnServer(1, tripResponse.getTripDetail().get(0).getId());*/
     }
 
 
-    private void updateLocationOnServer(int status, String id) {
+    private void updateLocationOnServer(String id) {
 
         if (mCurrentLocation != null) {
 
-            String visiid = String.valueOf(visit_id);
-            String tripid = id;
 
-            String userid = LocationPrefs.getString(getApplicationContext(), "loginId");
             String lattitude = String.valueOf(mCurrentLocation.getLatitude());
             String longitude = String.valueOf(mCurrentLocation.getLongitude());
 
-            RequestBody lat = RequestBody.create(MediaType.parse("text/plain"), lattitude);
-            RequestBody statusbody = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(status));
-            RequestBody longit = RequestBody.create(MediaType.parse("text/plain"), longitude);
-            RequestBody userid1 = RequestBody.create(MediaType.parse("text/plain"), userid);
-            RequestBody tripid1 = RequestBody.create(MediaType.parse("text/plain"), tripid);
+            RequestBody user_latitude = RequestBody.create(MediaType.parse("text/plain"), lattitude);
+            /* RequestBody statusbody = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(status));*/
+            RequestBody user_longitude = RequestBody.create(MediaType.parse("text/plain"), longitude);
+            RequestBody id1 = RequestBody.create(MediaType.parse("text/plain"), userid);
+           /* RequestBody tripid1 = RequestBody.create(MediaType.parse("text/plain"), tripid);
             RequestBody visitid = RequestBody.create(MediaType.parse("text/plain"), visiid);
-
+*/
 
             Utils.showProgressDialog(this);
-            RestClient.AddUser(userid1, tripid1, visitid, lat, longit, statusbody, new Callback<AddTripResponse>() {
+            RestClient.AddUser(id1, user_latitude, user_longitude, new Callback<AddTripResponse>() {
                 @Override
                 public void onResponse(Call<AddTripResponse> call, Response<AddTripResponse> response) {
                     Utils.dismissProgressDialog();
                     if (response.body() != null) {
-                        if (response.body().getStatus().equalsIgnoreCase("1")) {
+
+                        if (response.body().getStatus()) {
                             /*Utils.displayToast(getApplicationContext(), "Successfuly Add");*/
 
 
@@ -304,33 +288,7 @@ public class LocationActivity extends AppCompatActivity {
 
 
     private void distanceFromLocation(Location mCurrentLocation) {
-
-
-        if (mCurrentLocation != null && !TextUtils.isEmpty(lattitude) && !TextUtils.isEmpty(longitude)) {
-            LatLng myLat = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-            Location triplocation = new Location("Two");
-            triplocation.setLatitude(Double.parseDouble(lattitude));
-            triplocation.setLongitude(Double.parseDouble(longitude));
-
-            float distanceBetweenLocation = mCurrentLocation.distanceTo(triplocation);
-
-            if (distanceBetweenLocation < 50) {
-
-                updateLocationOnServer(1, id);
-                Toast.makeText(getApplicationContext(), "Trip tracking started", Toast.LENGTH_SHORT).show();
-
-            } else {
-                updateLocationOnServer(2, id);
-                LocationPrefs.putInt(getApplicationContext(), userid, visit_id + 1);
-                visit_id++;
-
-
-                Toast.makeText(getApplicationContext(), "Trip tracking end:" + visit_id, Toast.LENGTH_SHORT).show();
-            }
-
-        }
-
-
+        updateLocationOnServer(id);
     }
 
     @Override
@@ -455,30 +413,7 @@ public class LocationActivity extends AppCompatActivity {
         }
     }
 
-    /* @OnClick(R.id.btnShow1)
-     public void showdata() {
 
-         Realm realm = Realm.getDefaultInstance();
-         realm.executeTransaction(new Realm.Transaction() {
-             @Override
-             public void execute(Realm realm) {
-
-                 RealmResults<GpsTracker> realmResults = realm.where(GpsTracker.class).findAll();
-                 if ((!realmResults.isEmpty())) {
-                     for (GpsTracker gpsTracker : realmResults) {
-                         Log.d("Location Data", gpsTracker.getLattitude() + " " + gpsTracker.getLongitude() + " " + gpsTracker.getTime());
-                         Toast.makeText(LocationActivity.this, gpsTracker.getLattitude() + " " + gpsTracker.getLongitude() + " " + gpsTracker.getTime(), Toast.LENGTH_SHORT).show();
-                     }
-
-                     Toast.makeText(LocationActivity.this, "Check Your Logcat", Toast.LENGTH_SHORT).show();
-                 } else {
-                     Toast.makeText(LocationActivity.this, "No Data", Toast.LENGTH_SHORT).show();
-
-                 }
-             }
-         });
-     }
- */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
@@ -540,24 +475,3 @@ public class LocationActivity extends AppCompatActivity {
         }
     }
 }
-
-/*
-public class MyLocationListener implements LocationListener {
-    @Override
-    public void onLocationChanged(Location location) {
-        if (status == 0) {
-            lat1 = location.getLatitude();
-            lon1 = location.getLongitude();
-        } else if ((status % 2) != 0) {
-            lat2 = location.getLatitude();
-            lon2 = location.getLongitude();
-            distance += distanceBetweenTwoPoint(lat1, lon1, lat2, lon2);
-        } else if ((status % 2) == 0) {
-            lat1 = location.getLatitude();
-            lon1 = location.getLongitude();
-            distance += distanceBetweenTwoPoint(lat2, lon2, lat1, lon1);
-        }
-        status++;
-        UIhandler.postDelayed(sendUpdatesToUI, 0);
-    }
-*/
